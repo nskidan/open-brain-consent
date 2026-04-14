@@ -65,7 +65,7 @@
           body: JSON.stringify({ email: email, password: password, authorization_id: authId })
         });
         var data = await res.json();
-        if (!res.ok) { showErr(data.error || "Sign in failed"); btn.disabled = false; statusEl.style.display = "none"; return; }
+        if (!res.ok) { showErr(data.error + (data.debug ? " | debug: " + JSON.stringify(data.debug) : "")); btn.disabled = false; statusEl.style.display = "none"; return; }
         if (data.redirect_to) { showStatus("Success! Redirecting..."); window.location.href = data.redirect_to; }
       } catch (err) {
         showErr("Connection error: " + err.message);
