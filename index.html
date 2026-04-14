@@ -1,107 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Open Brain - Sign In</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .card { background: #1e293b; border-radius: 12px; padding: 2.5rem; width: 100%; max-width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
-    h1 { font-size: 1.4rem; text-align: center; margin-bottom: .25rem; }
-    .subtitle { text-align: center; color: #94a3b8; font-size: .85rem; margin-bottom: 1.75rem; }
-    label { display: block; font-size: .8rem; color: #94a3b8; margin-bottom: .35rem; }
-    input { width: 100%; padding: .65rem .75rem; border: 1px solid #334155; border-radius: 8px; background: #0f172a; color: #e2e8f0; font-size: .95rem; margin-bottom: 1rem; outline: none; }
-    input:focus { border-color: #6366f1; }
-    button { width: 100%; padding: .7rem; border: none; border-radius: 8px; background: #6366f1; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; }
-    button:hover { background: #4f46e5; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    .error { color: #f87171; font-size: .85rem; text-align: center; margin-bottom: 1rem; display: none; }
-    .status { color: #94a3b8; font-size: .85rem; text-align: center; margin-top: 1rem; display: none; }
-  </style>
-</head>
+<head><meta charset="utf-8" /><title>Loading...</title></head>
 <body>
-  <div class="card">
-    <h1>Open Brain</h1>
-    <p class="subtitle">Sign in to connect</p>
-    <div id="error" class="error"></div>
-    <form id="form">
-      <label for="email">Email</label>
-      <input id="email" type="email" required autocomplete="email" />
-      <label for="password">Password</label>
-      <input id="password" type="password" required autocomplete="current-password" />
-      <button type="submit" id="btn">Sign In</button>
-    </form>
-    <p id="status" class="status"></p>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <form id="f" method="POST" action="https://hrmfalgllvulavmhfhkn.supabase.co/functions/v1/open-brain-mcp/oauth/consent">
+  </form>
   <script>
-    var SUPABASE_URL = "https://hrmfalgllvulavmhfhkn.supabase.co";
-    var PUBLISHABLE_KEY = "sb_publishable_3epCF1Urmpbwu5T1aMPXmQ_wzMWVCBc";
-    var sb = supabase.createClient(SUPABASE_URL, PUBLISHABLE_KEY);
+    // Pass all URL params as hidden fields so the POST receives them
     var params = new URLSearchParams(location.search);
-    var authId = params.get("authorization_id");
-    var form = document.getElementById("form");
-    var btn = document.getElementById("btn");
-    var errEl = document.getElementById("error");
-    var statusEl = document.getElementById("status");
-
-    function showErr(msg) { errEl.textContent = msg; errEl.style.display = "block"; }
-    function showStatus(msg) { statusEl.textContent = msg; statusEl.style.display = "block"; }
-
-    async function approve() {
-      showStatus("Approving connection...");
-      // Get the user's access token from the sign-in session
-      var sess = await sb.auth.getSession();
-      var token = sess.data.session.access_token;
-
-      // Call GoTrue consent endpoint directly with credentials: include
-      // to send the Supabase auth cookie set during the OAuth flow
-      var res = await fetch(
-        SUPABASE_URL + "/auth/v1/oauth/authorizations/" + authId + "/consent",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json;charset=UTF-8",
-            "Authorization": "Bearer " + token,
-            "X-Supabase-Api-Version": "2024-01-01",
-            "apikey": PUBLISHABLE_KEY
-          },
-          body: JSON.stringify({ action: "approve" })
-        }
-      );
-
-      if (!res.ok) {
-        var errData = await res.json().catch(function() { return { message: res.statusText }; });
-        showErr("Approval failed (" + res.status + "): " + (errData.message || errData.msg || JSON.stringify(errData)));
-        btn.disabled = false;
-        statusEl.style.display = "none";
-        return;
-      }
-
-      var data = await res.json();
-      if (data.redirect_url) {
-        showStatus("Success! Redirecting...");
-        window.location.href = data.redirect_url;
-      }
-    }
-
-    (function() {
-      if (!authId) { showErr("Missing authorization_id - open this page from Claude Desktop."); }
-    })();
-
-    form.addEventListener("submit", async function(e) {
-      e.preventDefault();
-      errEl.style.display = "none";
-      btn.disabled = true;
-      var email = document.getElementById("email").value;
-      var password = document.getElementById("password").value;
-      showStatus("Signing in...");
-      var res = await sb.auth.signInWithPassword({ email: email, password: password });
-      if (res.error) { showErr(res.error.message); btn.disabled = false; statusEl.style.display = "none"; return; }
-      await approve();
-    });
+    var form = document.getElementById("f");
+    // Set action URL with query string intact
+    form.action = form.action + location.search;
+    form.submit();
   </script>
 </body>
 </html>
