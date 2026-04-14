@@ -34,12 +34,8 @@
     </form>
     <p id="status" class="status"></p>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    var sb = supabase.createClient(
-      "https://hrmfalgllvulavmhfhkn.supabase.co",
-      "sb_publishable_3epCF1Urmpbwu5T1aMPXmQ_wzMWVCBc"
-    );
+    var APPROVE_URL = "https://hrmfalgllvulavmhfhkn.supabase.co/functions/v1/open-brain-mcp/oauth/approve";
     var params = new URLSearchParams(location.search);
     var authId = params.get("authorization_id");
     var form = document.getElementById("form");
@@ -50,18 +46,8 @@
     function showErr(msg) { errEl.textContent = msg; errEl.style.display = "block"; }
     function showStatus(msg) { statusEl.textContent = msg; statusEl.style.display = "block"; }
 
-    async function approve() {
-      showStatus("Approving connection...");
-      var res = await sb.auth.oauth.approveAuthorization(authId);
-      if (res.error) { showErr("Approval failed: " + res.error.message); btn.disabled = false; return; }
-      if (res.data && res.data.redirect_to) { window.location.href = res.data.redirect_to; }
-    }
-
-    // Check if already logged in
-    (async function() {
-      if (!authId) { showErr("Missing authorization_id - open this page from Claude Desktop."); return; }
-      var sess = await sb.auth.getSession();
-      if (sess.data.session) { form.style.display = "none"; showStatus("Already signed in - approving..."); await approve(); }
+    (function() {
+      if (!authId) { showErr("Missing authorization_id - open this page from Claude Desktop."); }
     })();
 
     form.addEventListener("submit", async function(e) {
@@ -70,9 +56,22 @@
       btn.disabled = true;
       var email = document.getElementById("email").value;
       var password = document.getElementById("password").value;
-      var res = await sb.auth.signInWithPassword({ email: email, password: password });
-      if (res.error) { showErr(res.error.message); btn.disabled = false; return; }
-      await approve();
+
+      showStatus("Signing in...");
+      try {
+        var res = await fetch(APPROVE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email, password: password, authorization_id: authId })
+        });
+        var data = await res.json();
+        if (!res.ok) { showErr(data.error || "Sign in failed"); btn.disabled = false; statusEl.style.display = "none"; return; }
+        if (data.redirect_to) { showStatus("Success! Redirecting..."); window.location.href = data.redirect_to; }
+      } catch (err) {
+        showErr("Connection error: " + err.message);
+        btn.disabled = false;
+        statusEl.style.display = "none";
+      }
     });
   </script>
 </body>
